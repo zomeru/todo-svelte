@@ -7,6 +7,7 @@ specifiers:
   sass: ^1.58.3
   svelte: ^3.55.1
   svelte-check: ^2.10.3
+  svelte-icons: ^2.1.0
   svelte-preprocess: ^5.0.1
   tslib: ^2.5.0
   typescript: ^4.9.3
@@ -14,6 +15,7 @@ specifiers:
   vite: ^4.1.0
 
 dependencies:
+  svelte-icons: 2.1.0
   uuid: 9.0.0
 
 devDependencies:
@@ -818,6 +820,10 @@ packages:
     dependencies:
       svelte: 3.55.1
     dev: true
+
+  /svelte-icons/2.1.0:
+    resolution: {integrity: sha512-rHPQjweEc9fGSnvM0/4gA3pDHwyZyYsC5KhttCZRhSMJfLttJST5Uq0B16Czhw+HQ+HbSOk8kLigMlPs7gZtfg==}
+    dev: false
 
   /svelte-preprocess/4.10.7_fsk2356kdqta2rdbnwwjn3abbe:
     resolution: {integrity: sha512-sNPBnqYD6FnmdBrUmBCaqS00RyCsCpj2BG58A1JBswNF7b0OKviwxqVrOL/CKyJrLSClrSeqQv5BXNg2RUbPOw==}
