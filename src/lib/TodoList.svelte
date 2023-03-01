@@ -3,11 +3,25 @@
 <script lang="ts">
 	import { createEventDispatcher, afterUpdate } from 'svelte';
 	import FaRegTrashAlt from 'svelte-icons/fa/FaRegTrashAlt.svelte';
+	import { scale, crossfade } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 	import { Todo } from '../types';
 
 	afterUpdate(() => {
-		if (autoScroll) listDiv.scrollTo(0, listDivOffsetHeight);
-		autoScroll = false;
+		if (scrollOnAdd) {
+			let pos = 0;
+			if (scrollOnAdd === 'top') pos = 0;
+			if (scrollOnAdd === 'bottom') pos = listDivOffsetHeight;
+			if (autoScroll) listDiv.scrollTo(0, pos);
+			autoScroll = false;
+		}
+	});
+
+	const [send, receive] = crossfade({
+		duration: 400,
+		fallback(node) {
+			return scale(node, { start: 0.5, duration: 300 });
+		}
 	});
 
 	// Props
@@ -17,8 +31,19 @@
 	export let errorMsg = '';
 	export let deletingItems: string[] = [];
 	export let updatingItems: string[] = [];
+	export let scrollOnAdd: 'top' | 'bottom' | undefined = undefined;
+
+	$: done = todos ? todos.filter((todo) => todo.completed) : [];
+	$: todo = todos ? todos.filter((todo) => !todo.completed) : [];
 
 	let prevTodos = todos;
+
+	// State & Events
+	let inputText = '';
+	let autoScroll = false;
+	let input: HTMLInputElement;
+	let listDiv: HTMLDivElement;
+	let listDivOffsetHeight: number;
 
 	$: {
 		autoScroll = todos && prevTodos && prevTodos.length < todos.length;
@@ -32,13 +57,6 @@
 	export function focusInput() {
 		input.focus();
 	}
-
-	// State & Events
-	let inputText = '';
-	let autoScroll = false;
-	let input: HTMLInputElement;
-	let listDiv: HTMLDivElement;
-	let listDivOffsetHeight: number;
 
 	const dispatch = createEventDispatcher();
 
@@ -88,42 +106,66 @@
 				{#if todos.length === 0}
 					<p class="state-text">No todos</p>
 				{:else}
-					<ul>
-						{#each todos as { id, title, completed } (id)}
-							<li>
-								<div class:completed>
-									<label>
-										<input
-											type="checkbox"
-											checked={completed}
-											on:change={() => handleToggleTodo(id, !completed)}
-											disabled={deletingItems.includes(id) || updatingItems.includes(id)}
-										/>
-										{title}
-									</label>
-									{#if deletingItems.includes(id)}
-										<span class="deleting-text">Deleting</span>
+					<div style:display="flex">
+						{#each [todo, done] as list, index}
+							<div class="list-wrapper">
+								<h2>{index === 0 ? 'Todo' : 'Done'}</h2>
+								<ul>
+									{#each list as todo, index (todo.id)}
+										{@const { id, title, completed } = todo}
+										<li
+											animate:flip={{
+												duration: 300
+											}}
+										>
+											<slot {todo} {handleToggleTodo} {index}>
+												<div
+													in:receive|local={{
+														key: id
+													}}
+													out:send|local={{
+														key: id
+													}}
+													class:completed
+												>
+													<label>
+														<input
+															type="checkbox"
+															checked={completed}
+															on:change={() => handleToggleTodo(id, !completed)}
+															disabled={deletingItems.includes(id) || updatingItems.includes(id)}
+														/>
+														<slot name="title">
+															{title}
+														</slot>
+													</label>
+													{#if deletingItems.includes(id)}
+														<span class="deleting-text">Deleting</span>
+													{/if}
+													{#if updatingItems.includes(id)}
+														<span class="updating-text">Updating</span>
+													{/if}
+													<button
+														class="remove-todo-button"
+														aria-label="Remove todo: {title}"
+														on:click={() => handleRemoveTodo(id)}
+														disabled={deletingItems.includes(id) || updatingItems.includes(id)}
+													>
+														<span style:width="10px" style:display="inline-block">
+															<FaRegTrashAlt />
+														</span></button
+													>
+												</div>
+											</slot>
+										</li>
+									{/each}
+									{#if isAddingTodo}
+										<li>Loading...</li>
 									{/if}
-									{#if updatingItems.includes(id)}
-										<span class="updating-text">Updating</span>
-									{/if}
-									<button
-										class="remove-todo-button"
-										aria-label="Remove todo: {title}"
-										on:click={() => handleRemoveTodo(id)}
-										disabled={deletingItems.includes(id) || updatingItems.includes(id)}
-									>
-										<span style:width="10px" style:display="inline-block">
-											<FaRegTrashAlt />
-										</span></button
-									>
-								</div>
-							</li>
+								</ul>
+							</div>
 						{/each}
-						{#if isAddingTodo}
-							<li>Loading...</li>
-						{/if}
-					</ul>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -186,6 +228,15 @@
 	.todo-list {
 		max-height: 500px;
 		overflow: auto;
+
+		.list-wrapper {
+			padding: 10px;
+			flex: 1;
+
+			h2 {
+				margin-bottom: 10px;
+			}
+		}
 		ul {
 			margin: 0;
 			padding: 10px;

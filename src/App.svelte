@@ -2,10 +2,13 @@
 
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
 	import { v4 as uuid } from 'uuid';
 
 	import TodoList from './lib/TodoList.svelte';
 	import { Todo } from './types';
+	import spin from './lib/transitions/spin';
+	import fade from './lib/transitions/fade';
 	// import Sample from './lib/Sample.svelte';
 
 	let todoList: {
@@ -69,7 +72,7 @@
 			.then(async (res) => {
 				if (res.ok) {
 					const todo = await res.json();
-					todos = [...todos, { ...todo, id: uuid() }];
+					todos = [{ ...todo, id: uuid() }, ...todos];
 					todoList.clearInput();
 				} else {
 					errorMsg = 'Failed to add todo';
@@ -150,7 +153,7 @@
 >
 
 {#if !todoHidden}
-	<div style:max-width="400px">
+	<div style:max-width="800px">
 		<TodoList
 			{todos}
 			{isAddingTodo}
@@ -158,12 +161,38 @@
 			{errorMsg}
 			{updatingItems}
 			{deletingItems}
+			scrollOnAdd="top"
 			bind:this={todoList}
 			on:addTodo={handleAddTodo}
 			on:removeTodo={handleRemoveTodo}
 			on:toggleTodo={handleToggleTodo}
 		/>
+		<!-- <span slot="title">{index + 1}: {todo.title}</span> -->
+		<!-- <div>
+				<input
+					type="checkbox"
+					checked={completed}
+					on:change={() => handleToggleTodo(id, !completed)}
+					disabled={deletingItems.includes(id) || updatingItems.includes(id)}
+				/>
+				{title}
+			</div> -->
+		<!-- <Todo {todo}  /> -->
+		<!-- </TodoList> -->
 	</div>
+	{#if todos}
+		<p>
+			Number of todos:
+			{#key todos.length}
+				<span
+					style:display="inline-block"
+					in:fly|local={{
+						y: -10
+					}}>{todos.length}</span
+				>
+			{/key}
+		</p>
+	{/if}
 {/if}
 
 <!-- <Sample /> -->
